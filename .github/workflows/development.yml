@@ -1,40 +1,17 @@
-name: Development build
+name: iOS Only Build
 
 on:
-  pull_request:
-    branches-ignore:
-      - 'l10n_main'
-    types: [opened, reopened]
-  push:
-    branches-ignore:
-      - 'l10n_main'
   workflow_dispatch:
 
 jobs:
   build:
-    name: Development build
-    strategy:
-      matrix:
-        include:
-          - platform: 2
-            platform_name: ios
-          - platform: 7
-            platform_name: iossimulator
-          - platform: 8
-            platform_name: tvossimulator
-
     runs-on: macos-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Checkout repository submodules
+      - name: Checkout submodules
         run: git submodule update --init --recursive
-
-      - name: Get gl4es latest commit hash
-        id: gl4es-sha
-        run: echo "sha=$(git ls-remote https://github.com/PojavLauncherTeam/gl4es-114-extra refs/heads/master | cut -f1)" >> $GITHUB_OUTPUT
 
       - name: Get JRE8
         uses: dawidd6/action-download-artifact@v2
@@ -54,7 +31,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           workflow: build.yml
           path: depends
-          workflow_conclusion: completed
+          workflow_conclusion: success
           allow_forks: true
           repo: PojavLauncherTeam/android-openjdk-build-multiarch
           branch: buildjre17-21
@@ -66,51 +43,32 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           workflow: build.yml
           path: depends
-          workflow_conclusion: completed
+          workflow_conclusion: success
           allow_forks: true
           repo: PojavLauncherTeam/android-openjdk-build-multiarch
           branch: buildjre17-21
           name: jre21-ios-aarch64
 
-      - name: Build for ${{ matrix.platform_name }}
+      - name: Build for iOS
         run: |
           export PATH=/opt/procursus/bin:/opt/homebrew/bin:$PATH
           export RUNNER=1 SLIMMED=1
-          if [ "${{ matrix.platform_name }}" == "ios" ]; then
-            gmake -j$(sysctl -n hw.ncpu) dsym package PLATFORM=${{ matrix.platform }}
-            gmake -j$(sysctl -n hw.ncpu) dsym package PLATFORM=${{ matrix.platform }} TROLLSTORE_JIT_ENT=1
-          elif [ "${{ matrix.platform_name }}" == "tvos" ]; then
-            gmake -j$(sysctl -n hw.ncpu) dsym package PLATFORM=${{ matrix.platform }} TROLLSTORE_JIT_ENT=1
-          else
-            gmake -j$(sysctl -n hw.ncpu) dsym package PLATFORM=${{ matrix.platform }}
-          fi
+          gmake -j$(sysctl -n hw.ncpu) dsym package PLATFORM=2
+          gmake -j$(sysctl -n hw.ncpu) dsym package PLATFORM=2 TROLLSTORE_JIT_ENT=1
 
       - name: Upload regular ipa
         uses: actions/upload-artifact@v4
         with:
-          name: net.kdt.pojavlauncher-${{ matrix.platform_name }}.ipa
-          path: artifacts/net.kdt.pojavlauncher-*-${{ matrix.platform_name }}.ipa
+          name: pojavlauncher-ios.ipa
+          path: artifacts/net.kdt.pojavlauncher-*-ios.ipa
 
-      - name: Upload regular tipa
+      - name: Upload tipa (TrollStore)
         uses: actions/upload-artifact@v4
         with:
-          name: net.kdt.pojavlauncher-${{ matrix.platform_name }}-trollstore.tipa
-          path: artifacts/net.kdt.pojavlauncher-*-${{ matrix.platform_name }}-trollstore.tipa
+          name: pojavlauncher-ios-trollstore.tipa
+          path: artifacts/net.kdt.pojavlauncher-*-ios-trollstore.tipa
 
-      - name: Upload slimmed ipa
-        uses: actions/upload-artifact@v4
-        with:
-          name: net.kdt.pojavlauncher.slimmed-${{ matrix.platform_name }}.ipa
-          path: artifacts/net.kdt.pojavlauncher.slimmed-*-${{ matrix.platform_name }}.ipa
-
-      - name: Upload slimmed tipa
-        uses: actions/upload-artifact@v4
-        with:
-          name: net.kdt.pojavlauncher.slimmed-${{ matrix.platform_name }}-trollstore.tipa
-          path: artifacts/net.kdt.pojavlauncher.slimmed-*-${{ matrix.platform_name }}-trollstore.tipa
-
-      - name: Upload PojavLauncher.dSYM
-        if: matrix.platform_name == 'ios'
+      - name: Upload dSYM
         uses: actions/upload-artifact@v4
         with:
           name: PojavLauncher.dSYM
