@@ -9,5 +9,5 @@
 /PojavLauncher.xcodeproj/xcshareddata/*
 /PojavLauncher.xcodeproj/xcuserdata/*
 /PojavLauncher.xcodeproj/project.xcworkspace/*
-/depends
+#/depends
 /Natives/config.h
