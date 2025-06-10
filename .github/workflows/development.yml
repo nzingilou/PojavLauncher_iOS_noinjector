@@ -5,8 +5,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest
-
+    runs-on: self-hosted
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -14,9 +13,12 @@ jobs:
       - name: Checkout submodules
         run: git submodule update --init --recursive
 
-      - name: Build for iOS
+      - name: Build for iOS (with local JREs)
         run: |
           export PATH=/opt/procursus/bin:/opt/homebrew/bin:$PATH
+          export JRE8_DIR=depends/java-8-openjdk
+          export JRE17_DIR=depends/java-17-openjdk
+          export JRE21_DIR=depends/java-21-openjdk
           export RUNNER=1 SLIMMED=1
           gmake -j$(sysctl -n hw.ncpu) dsym package PLATFORM=2
           gmake -j$(sysctl -n hw.ncpu) dsym package PLATFORM=2 TROLLSTORE_JIT_ENT=1
